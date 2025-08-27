@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Vault - Editable Text Storage</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);padding:20px;color:#333;}
+.container{background-color:rgba(255,255,255,0.97);border-radius:15px;box-shadow:0 15px 35px rgba(0,0,0,0.25);padding:35px;width:90%;max-width:900px;text-align:center;}
+h1{color:#2c3e50;margin-bottom:25px;font-weight:700;font-size:2.2rem;background:linear-gradient(to right,#2c3e50,#3498db);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.tab-container{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-bottom:25px;}
+.tab{background-color:#e9ecef;border:none;padding:12px 24px;border-radius:25px;cursor:pointer;font-size:15px;font-weight:500;transition:all 0.3s ease;color:#495057;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.tab:hover{background-color:#dee2e6;transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.15);}
+.tab.active{background:linear-gradient(to right,#3498db,#2c3e50);color:white;box-shadow:0 4px 12px rgba(52,152,219,0.4);}
+.text-display{background-color:#f8f9fa;border:2px solid #e9ecef;border-radius:12px;padding:25px;margin:25px 0;word-break:break-word;font-family:'Courier New', monospace;font-size:17px;line-height:1.6;color:#2c3e50;box-shadow:inset 0 3px 8px rgba(0,0,0,0.08);min-height:180px;text-align:left;white-space:pre-wrap;outline:none;}
+.text-display:focus{border-color:#3498db;box-shadow:inset 0 3px 8px rgba(52,152,219,0.2),0 0 0 2px rgba(52,152,219,0.1);}
+.instructions{background:linear-gradient(to right,#e8f4fc,#d1e9fa);border-left:5px solid #2196F3;padding:20px;margin:25px 0;text-align:left;border-radius:0 10px 10px 0;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
+.instructions h3{color:#0b5b96;margin-bottom:12px;font-size:1.3rem;}
+.instructions ol{padding-left:20px;}
+.instructions li{margin-bottom:10px;line-height:1.5;}
+.btn-container{display:flex;justify-content:center;flex-wrap:wrap;gap:15px;margin-top:20px;}
+.btn{background:linear-gradient(to right,#3498db,#2980b9);color:white;border:none;padding:14px 28px;border-radius:30px;cursor:pointer;font-size:16px;font-weight:600;transition:all 0.3s ease;box-shadow:0 4px 10px rgba(52,152,219,0.3);}
+.btn:hover{transform:translateY(-3px);box-shadow:0 7px 15px rgba(52,152,219,0.4);}
+.btn:active{transform:translateY(-1px);}
+.btn-copy{background:linear-gradient(to right,#27ae60,#219653);box-shadow:0 4px 10px rgba(39,174,96,0.3);}
+.btn-copy:hover{box-shadow:0 7px 15px rgba(39,174,96,0.4);}
+.btn-refresh{background:linear-gradient(to right,#e74c3c,#c0392b);box-shadow:0 4px 10px rgba(231,76,60,0.3);}
+.btn-refresh:hover{box-shadow:0 7px 15px rgba(231,76,60,0.4);}
+.btn-export{background:linear-gradient(to right,#9b59b6,#8e44ad);box-shadow:0 4px 10px rgba(155,89,182,0.3);}
+.btn-export:hover{box-shadow:0 7px 15px rgba(155,89,182,0.4);}
+.notification{position:fixed;top:25px;right:25px;padding:16px 28px;background:linear-gradient(to right,#27ae60,#219653);color:white;border-radius:10px;box-shadow:0 7px 18px rgba(0,0,0,0.25);transform:translateX(150%);transition:transform 0.4s ease;z-index:1000;font-weight:500;}
+.notification.error{background:linear-gradient(to right,#e74c3c,#c0392b);}
+.notification.show{transform:translateX(0);}
+@media (max-width:600px){.container{padding:25px 20px;}.text-display{padding:18px;font-size:16px;}.tab{padding:10px 18px;font-size:14px;}.btn{padding:12px 22px;font-size:15px;}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Notes</h1>
+<div class="tab-container" id="tabContainer"></div>
+<div class="text-display" id="textDisplay" contenteditable="true">
+Select a text entry from the tabs above to view its content.
+</div>
+<div class="instructions">
+<h3>How to Use</h3>
+<ol>
+<li>Select a tab to view its content</li>
+<li>Edit the text directly in the text area</li>
+<li>Use the buttons below to copy text or export as HTML</li>
+<li>Changes are saved in your browser until you export</li>
+</ol>
+</div>
+<div class="btn-container">
+<button class="btn btn-refresh" onclick="location.reload()">Refresh Page</button>
+<button class="btn btn-copy" onclick="copyText()">Copy Text</button>
+<button class="btn btn-export" onclick="exportAsHTML()">Export as HTML</button>
+</div>
+</div>
+<div class="notification" id="notification">Text copied to clipboard!</div>
+
+<script>
+const textEntries=[
+{id:1,name:"Gmail Accounts",content:"This is my personal note.\n\nI can store any text I want here without encryption.\n\nIt's perfect for non-sensitive information that I need to access quickly."},
+{id:2,name:"Social Media",content:"My Ideas:\n\n1. Create a weather app that suggests activities\n2. Write a short story about time travel\n3. Develop a recipe organizer app\n4. Design a better calendar interface\n5. Build a habit tracking system"},
+{id:3,name:"Important Notes",content:"Books to Read:\n\n- 'The Psychology of Money' by Morgan Housel\n- 'Atomic Habits' by James Clear\n- 'The Three-Body Problem' by Liu Cixin\n- 'Project Hail Mary' by Andy Weir\n- 'Dune' by Frank Herbert\n\nBlogs:\n- Wait But Why\n- Farnam Street\n- Paul Graham's Essays"},
+{id:4,name:"Others",content:"Frequently Used Info:\n\nGit commands:\n- git status\n- git add .\n- git commit -m \"message\"\n- git push origin main\n\nPhone numbers:\n- Pizza place: 555-1234\n- Pharmacy: 555-5678\n- Vet: 555-9012\n\nWi-Fi: HomeNetwork\nPassword: home1234"}];
+
+let currentTextId=1;
+
+function initPage(){
+loadSavedContent();
+generateTabs();
+displayText();
+}
+
+function loadSavedContent(){
+const savedData=localStorage.getItem('textVaultData');
+if(savedData){try{
+const parsedData=JSON.parse(savedData);
+parsedData.forEach((savedEntry,index)=>{if(textEntries[index]) textEntries[index].content=savedEntry.content;});
+}catch(e){console.error("Error loading saved data:",e);}}
+}
+
+function saveContent(){localStorage.setItem('textVaultData',JSON.stringify(textEntries));}
+
+function generateTabs(){
+const tabContainer=document.getElementById('tabContainer');
+tabContainer.innerHTML='';
+textEntries.forEach(text=>{
+const tab=document.createElement('button');
+tab.className='tab '+(text.id===currentTextId?'active':'');
+tab.textContent=text.name;
+tab.onclick=()=>switchText(text.id);
+tabContainer.appendChild(tab);
+});
+}
+
+function switchText(id){
+const currentText=textEntries.find(t=>t.id===currentTextId);
+if(currentText){currentText.content=document.getElementById('textDisplay').textContent;saveContent();}
+currentTextId=id;
+displayText();
+generateTabs();
+}
+
+function displayText(){
+const currentText=textEntries.find(t=>t.id===currentTextId);
+if(currentText) document.getElementById('textDisplay').textContent=currentText.content;
+}
+
+function copyText(){
+const textToCopy=document.getElementById('textDisplay').textContent;
+if(!textToCopy.trim()){showNotification('No text to copy!',true);return;}
+navigator.clipboard.writeText(textToCopy).then(()=>{showNotification('Text copied to clipboard!');});
+}
+
+function showNotification(message,isError=false){
+const notification=document.getElementById('notification');
+notification.textContent=message;
+if(isError) notification.classList.add('error'); else notification.classList.remove('error');
+notification.classList.add('show');
+setTimeout(()=>{notification.classList.remove('show');},3000);
+}
+
+window.addEventListener('beforeunload',()=>{
+const currentText=textEntries.find(t=>t.id===currentTextId);
+if(currentText){currentText.content=document.getElementById('textDisplay').textContent;saveContent();}
+});
+
+function exportAsHTML(){
+const currentText=textEntries.find(t=>t.id===currentTextId);
+if(currentText){currentText.content=document.getElementById('textDisplay').textContent;saveContent();}
+const styleContent=document.querySelector('style').innerHTML;
+
+const htmlContent=`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exported Text Vault</title>
+<style>${styleContent}</style>
+</head>
+<body>
+<div class="container">
+<h1>Notes</h1>
+<div class="tab-container" id="tabContainer"></div>
+<div class="text-display" id="textDisplay">${currentText.content.replace(/\n/g,'<br>')}</div>
+<div class="instructions">
+<h3>How to Use</h3>
+<ol>
+<li>Click tabs to view content</li>
+<li>Text is now static</li>
+<li>You can copy the text if needed</li>
+</ol>
+</div>
+<div class="btn-container">
+<button class="btn btn-refresh" onclick="location.reload()">Refresh Page</button>
+<button class="btn btn-copy" onclick="copyText()">Copy Text</button>
+</div>
+</div>
+<script>
+const textEntries=${JSON.stringify(textEntries)};
+let currentTextId=${currentTextId};
+
+function generateTabs(){
+const tabContainer=document.getElementById('tabContainer');
+tabContainer.innerHTML='';
+textEntries.forEach(text=>{
+const tab=document.createElement('button');
+tab.className='tab '+(text.id===currentTextId?'active':'');
+tab.textContent=text.name;
+tab.onclick=()=>switchText(text.id);
+tabContainer.appendChild(tab);
+});
+}
+
+function switchText(id){
+currentTextId=id;
+const currentText=textEntries.find(t=>t.id===id);
+document.getElementById('textDisplay').innerHTML=currentText.content.replace(/\\n/g,'<br>');
+generateTabs();
+}
+
+function copyText(){
+const textToCopy=document.getElementById('textDisplay').innerText;
+navigator.clipboard.writeText(textToCopy);
+}
+
+generateTabs();
+</script>
+</body>
+</html>`;
+
+const blob=new Blob([htmlContent],{type:'text/html'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;
+a.download='text_vault_export.html';
+document.body.appendChild(a);
+a.click();
+setTimeout(()=>{document.body.removeChild(a); URL.revokeObjectURL(url);},100);
+showNotification('HTML file exported successfully!');
+}
+
+window.onload=initPage;
+</script>
+</body>
+</html>
